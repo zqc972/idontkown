@@ -2,7 +2,6 @@ import pyautogui
 import PIL.ImageGrab as ImageGrab   # 与pyscreenshot效果一致
 import PIL.Image as Image
 import imagehash
-import threading
 import signal
 import sqlite3
 import random
@@ -52,7 +51,7 @@ def record(question_hash: str, answer_hash: str):
 
 # 获取图片主色调
 def get_average_color(image: Image.Image):
-    temp_img = image.resize((10, 10))
+    temp_img = image.resize((36, 8))
     r = g = b = 0
     for count, color in temp_img.getcolors(temp_img.width * temp_img.height):
         r = r + count * color[0]
@@ -68,7 +67,7 @@ def classify_color(color: []):
     if color[0] > 192 and color[1] < 64 and color[2] < 64:
         print('检测到红色')
         return '红色'
-    elif color[0] < 64 and color[1] > 192 and color[2] < 64:
+    elif color[0] < 75 and color[1] > 192 and color[2] > 138:
         print('检测到绿色')
         return '绿色'
     elif color[0] < 64 and color[1] < 64 and color[2] > 192:
@@ -89,15 +88,15 @@ def classify_color(color: []):
 def auto_process():
     print('正在检测')
     # 应改进为截图一整个区域后，再将题目和各选项给切分出来
-    img_question = ImageGrab.grab(bbox=(100, 100, 400, 300))
-    img_A = ImageGrab.grab(bbox=(100, 400, 400, 600))
-    img_B = ImageGrab.grab(bbox=(100, 700, 400, 900))
-    img_C = ImageGrab.grab(bbox=(100, 1000, 400, 1200))
-    img_D = ImageGrab.grab(bbox=(100, 1300, 400, 1500))
+    img_question = ImageGrab.grab(bbox=(500, 350, 1050, 450))
+    img_A = ImageGrab.grab(bbox=(622, 468, 982, 550))
+    img_B = ImageGrab.grab(bbox=(622, 564, 982, 646))
+    img_C = ImageGrab.grab(bbox=(622, 660, 982, 742))
+    img_D = ImageGrab.grab(bbox=(622, 756, 982, 838))
 
     global pre_frame
     global cur_frame
-    cur_frame = ImageGrab.grab(bbox=(100, 100, 400, 1200))
+    cur_frame = ImageGrab.grab(bbox=(525, 32, 1079, 1018))
     if pre_frame is not None:
         hash_cur_frame = imagehash.average_hash(cur_frame)
         hash_pre_frame = imagehash.average_hash(pre_frame)
@@ -108,13 +107,13 @@ def auto_process():
 
     hash_question = imagehash.average_hash(img_question)
     hash_A = imagehash.average_hash(img_A)
-    color_A = get_average_color(img_A)
+    color_A = classify_color(get_average_color(img_A))
     hash_B = imagehash.average_hash(img_B)
-    color_B = get_average_color(img_B)
+    color_B = classify_color(get_average_color(img_B))
     hash_C = imagehash.average_hash(img_C)
-    color_C = get_average_color(img_C)
+    color_C = classify_color(get_average_color(img_C))
     hash_D = imagehash.average_hash(img_D)
-    color_D = get_average_color(img_D)
+    color_D = classify_color(get_average_color(img_D))
 
     if not query_question(str(hash_question)):
         # 检测颜色
