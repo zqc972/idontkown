@@ -129,6 +129,7 @@ def auto_process():
             elif select == 4:
                 pass
         # 选择后对正确答案记录
+        # 但要注意记录时不要重复添加数据，以及数据应为白色答案的hash值
         elif color_A == '绿色':
             record(hash_question, hash_A)
         elif color_B == '绿色':
