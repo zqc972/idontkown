@@ -8,13 +8,11 @@ import random
 
 
 # 修改此处进行定义操作窗口区域
-window_x1 = 0
-window_y1 = 0
-window_x2 = 400
-window_y2 = 400
 
 pre_frame = None    # 上一帧
 cur_frame = None    # 当前帧
+raw_hash = ['', '', '', '']     # 用于记录未选择状态下ABCD的hash值
+last_insert_sql = ''
 stop_flag = False
 
 db = sqlite3.connect('data.db')
@@ -26,7 +24,7 @@ def init():
     cursor.execute('create table if not exists data (question varchar(16) primary key,answer varchar(16))')
 
 
-# 查询问题hash
+# 通过问题的hash值判断是否为新题目
 def query_question(q_hash: str):
     cursor = db.cursor()
     cursor.execute('select * from data where question =\'' + q_hash + '\'')
@@ -37,16 +35,25 @@ def query_question(q_hash: str):
         return False
 
 
+# 查询答案
 def query_answer(q_hash: str):
     cursor = db.cursor()
     cursor.execute('select * from data where question = \'' + q_hash + '\'')
     data = cursor.fetchone()
-    return data
+    if data is not None:
+        return data[1]
+    else:
+        return None
 
 
 # 插入数据
 def record(question_hash: str, answer_hash: str):
-    db.execute('insert into data(question, answer) values (' + question_hash + ',' + answer_hash + ')')
+    global last_insert_sql
+    sql = 'insert into data(question, answer) values (\'' + question_hash + '\',\'' + answer_hash + '\')'
+    if sql != last_insert_sql:
+        db.execute(sql)
+        db.commit()
+        last_insert_sql = sql
 
 
 # 获取图片主色调
@@ -67,7 +74,7 @@ def classify_color(color: []):
     if color[0] > 192 and color[1] < 64 and color[2] < 64:
         print('检测到红色')
         return '红色'
-    elif color[0] < 75 and color[1] > 192 and color[2] > 138:
+    elif color[0] < 80 and color[1] > 192 and color[2] > 138:
         print('检测到绿色')
         return '绿色'
     elif color[0] < 64 and color[1] < 64 and color[2] > 192:
@@ -98,57 +105,75 @@ def auto_process():
     global cur_frame
     cur_frame = ImageGrab.grab(bbox=(525, 32, 1079, 1018))
     if pre_frame is not None:
-        hash_cur_frame = imagehash.average_hash(cur_frame)
-        hash_pre_frame = imagehash.average_hash(pre_frame)
+        hash_cur_frame = imagehash.dhash(cur_frame)
+        hash_pre_frame = imagehash.dhash(pre_frame)
         if hash_cur_frame != hash_pre_frame:
             print('监测区域中有移动..')
             pre_frame = cur_frame
             return
 
-    hash_question = imagehash.average_hash(img_question)
-    hash_A = imagehash.average_hash(img_A)
+    hash_question = str(imagehash.average_hash(img_question))
+    hash_A = str(imagehash.average_hash(img_A))
     color_A = classify_color(get_average_color(img_A))
-    hash_B = imagehash.average_hash(img_B)
+    hash_B = str(imagehash.average_hash(img_B))
     color_B = classify_color(get_average_color(img_B))
-    hash_C = imagehash.average_hash(img_C)
+    hash_C = str(imagehash.average_hash(img_C))
     color_C = classify_color(get_average_color(img_C))
-    hash_D = imagehash.average_hash(img_D)
+    hash_D = str(imagehash.average_hash(img_D))
     color_D = classify_color(get_average_color(img_D))
 
+    # 记录原始答案的hash值，以备在公布正确答案后存入数据库
+    if color_A == color_B == color_C == color_D == '白色':
+        raw_hash[0] = hash_A
+        raw_hash[1] = hash_B
+        raw_hash[2] = hash_C
+        raw_hash[3] = hash_D
+
+    # 若数据库中未收录该题目
     if not query_question(str(hash_question)):
-        # 检测颜色
+        # 检测答案颜色，判断当前是已作答还是未作答状态
         if color_A == color_B == color_C == color_D == '白色':
             # 进行盲选
             select = random.randint(1, 4)
+            print('准备盲选')
             if select == 1:
-                pass
+                pyautogui.press('A')
             elif select == 2:
-                pass
+                pyautogui.press('B')
             elif select == 3:
-                pass
+                pyautogui.press('C')
             elif select == 4:
-                pass
+                pyautogui.press('D')
         # 选择后对正确答案记录
         # 但要注意记录时不要重复添加数据，以及数据应为白色答案的hash值
         elif color_A == '绿色':
-            record(hash_question, str(hash_A))
+            print('正在将答案A记录为正确答案')
+            record(hash_question, raw_hash[0])
         elif color_B == '绿色':
-            record(hash_question, str(hash_B))
+            print('正在将答案B记录为正确答案')
+            record(hash_question, raw_hash[1])
         elif color_C == '绿色':
-            record(hash_question, str(hash_C))
+            print('正在将答案C记录为正确答案')
+            record(hash_question, raw_hash[2])
         elif color_D == '绿色':
-            record(hash_question, str(hash_D))
+            print('正在将答案D记录为正确答案')
+            record(hash_question, raw_hash[3])
     else:
+        print('已在数据库中找到该题目')
         hash_answer = query_answer(hash_question)
         # 对答案进行hash对比
         if hash_A == hash_answer:
-            record(hash_question, str(hash_A))
+            print('选择A答案')
+            pyautogui.press('A')
         elif hash_B == hash_answer:
-            record(hash_question, str(hash_B))
+            print('选择B答案')
+            pyautogui.press('B')
         elif hash_C == hash_answer:
-            record(hash_question, str(hash_C))
+            print('选择C答案')
+            pyautogui.press('C')
         elif hash_D == hash_answer:
-            record(hash_question, str(hash_D))
+            print('选择D答案')
+            pyautogui.press('D')
     # 更新帧，为下一动态检测而准备
     pre_frame = cur_frame
 
@@ -166,3 +191,4 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, stop)
     while not stop_flag:
         auto_process()
+        print('====================================')
