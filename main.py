@@ -131,24 +131,24 @@ def auto_process():
         # 选择后对正确答案记录
         # 但要注意记录时不要重复添加数据，以及数据应为白色答案的hash值
         elif color_A == '绿色':
-            record(hash_question, hash_A)
+            record(hash_question, str(hash_A))
         elif color_B == '绿色':
-            record(hash_question, hash_B)
+            record(hash_question, str(hash_B))
         elif color_C == '绿色':
-            record(hash_question, hash_C)
+            record(hash_question, str(hash_C))
         elif color_D == '绿色':
-            record(hash_question, hash_D)
+            record(hash_question, str(hash_D))
     else:
         hash_answer = query_answer(hash_question)
         # 对答案进行hash对比
         if hash_A == hash_answer:
-            record(hash_question, hash_A)
+            record(hash_question, str(hash_A))
         elif hash_B == hash_answer:
-            record(hash_question, hash_B)
+            record(hash_question, str(hash_B))
         elif hash_C == hash_answer:
-            record(hash_question, hash_C)
+            record(hash_question, str(hash_C))
         elif hash_D == hash_answer:
-            record(hash_question, hash_D)
+            record(hash_question, str(hash_D))
     # 更新帧，为下一动态检测而准备
     pre_frame = cur_frame
 
