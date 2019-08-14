@@ -1,5 +1,5 @@
 import pyautogui
-import PIL.ImageGrab as ImageGrab   # 与pyscreenshot效果一致
+import PIL.ImageGrab as ImageGrab
 import PIL.Image as Image
 import imagehash
 import signal
@@ -50,6 +50,7 @@ def query_answer(q_hash: str):
 def record(question_hash: str, answer_hash: str):
     global last_insert_sql
     sql = 'insert into data(question, answer) values (\'' + question_hash + '\',\'' + answer_hash + '\')'
+    # 避免对同一正确答案多次存储
     if sql != last_insert_sql:
         db.execute(sql)
         db.commit()
@@ -70,11 +71,12 @@ def get_average_color(image: Image.Image):
     return r, g, b
 
 
+# 颜色分类
 def classify_color(color: []):
-    if color[0] > 192 and color[1] < 64 and color[2] < 64:
+    if color[0] > 192 and color[1] < 90 and color[2] < 90:
         print('检测到红色')
         return '红色'
-    elif color[0] < 80 and color[1] > 192 and color[2] > 138:
+    elif color[0] < 100 and color[1] > 192 and color[2] > 138:
         print('检测到绿色')
         return '绿色'
     elif color[0] < 64 and color[1] < 64 and color[2] > 192:
@@ -93,8 +95,7 @@ def classify_color(color: []):
 
 # 处理逻辑
 def auto_process():
-    print('正在检测')
-    # 应改进为截图一整个区域后，再将题目和各选项给切分出来
+    # 可改进为截图一整个区域后，再将题目和各选项给切分出来
     img_question = ImageGrab.grab(bbox=(500, 350, 1050, 450))
     img_A = ImageGrab.grab(bbox=(622, 468, 982, 550))
     img_B = ImageGrab.grab(bbox=(622, 564, 982, 646))
@@ -122,7 +123,7 @@ def auto_process():
     hash_D = str(imagehash.average_hash(img_D))
     color_D = classify_color(get_average_color(img_D))
 
-    # 记录原始答案的hash值，以备在公布正确答案后存入数据库
+    # 记录原始答案的图像hash值，以备在公布正确答案后存入数据库
     if color_A == color_B == color_C == color_D == '白色':
         raw_hash[0] = hash_A
         raw_hash[1] = hash_B
@@ -145,7 +146,6 @@ def auto_process():
             elif select == 4:
                 pyautogui.press('D')
         # 选择后对正确答案记录
-        # 但要注意记录时不要重复添加数据，以及数据应为白色答案的hash值
         elif color_A == '绿色':
             print('正在将答案A记录为正确答案')
             record(hash_question, raw_hash[0])
@@ -159,7 +159,7 @@ def auto_process():
             print('正在将答案D记录为正确答案')
             record(hash_question, raw_hash[3])
     else:
-        print('已在数据库中找到该题目')
+        print('               已在数据库中找到该题目')
         hash_answer = query_answer(hash_question)
         # 对答案进行hash对比
         if hash_A == hash_answer:
@@ -178,6 +178,7 @@ def auto_process():
     pre_frame = cur_frame
 
 
+# 中止
 def stop(signum, frame):
     global stop_flag
     stop_flag = True
