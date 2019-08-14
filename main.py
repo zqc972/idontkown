@@ -178,7 +178,7 @@ def auto_process():
     pre_frame = cur_frame
 
 
-# 中止
+# 中止程序
 def stop(signum, frame):
     global stop_flag
     stop_flag = True
