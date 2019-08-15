@@ -15,7 +15,8 @@ screen_y1 = 0
 screen_x2 = 1121
 screen_y2 = 1020
 
-learn_mode = False
+# 学习模式开启随机选择功能
+learn_mode = True
 
 screen_width = screen_x2 - screen_x1
 screen_height = screen_y2 - screen_y1
@@ -46,7 +47,7 @@ def query(question: str):
     cursor = db.cursor()
     sql = 'select * from knowledge where question = \'' + question + '\''
     data = cursor.execute(sql)
-    return data.fetchone()
+    return data.fetchall()
 
 
 # 记录数据
@@ -56,7 +57,7 @@ def record(question: str, answer: str):
           'where not exists (select * from knowledge where question=\'' + question + '\'' + \
           'and answer=\'' + answer + '\')'
     if last_insert_sql != sql:
-        print('======= 正在记录 =========')
+        print('======= recoding to database ========')
         db.execute(sql)
         db.commit()
         last_insert_sql = sql
@@ -68,8 +69,8 @@ def get_button_color(image: Image.Image):
     lt0 = pixels[0, 0]
     rb0 = pixels[image.size[0] - 1, image.size[1] - 1]
     if lt0 == rb0 == (243, 232, 223):
-        lt1 = pixels[5, 5]
-        rb1 = pixels[image.size[0] - 6, image.size[1] - 6]
+        lt1 = pixels[60, 16]
+        rb1 = pixels[image.size[0] - 61, image.size[1] - 17]
         if lt1 == rb1 == (255, 255, 255):
             return '白色'
         elif lt1 == rb1 == (203, 46, 45):
@@ -99,7 +100,7 @@ def auto_process():
     c_img = whole_screen.crop(box=(99, 660, 458, 741))
     d_img = whole_screen.crop(box=(99, 757, 458, 837))
     continue_img = whole_screen.crop(box=(216, 768, 348, 806))
-    count_img = whole_screen.crop(box=(260, 255, 294, 286)).convert('L')
+    # prepare_img = whole_screen.crop(box=(260, 255, 294, 286))
     a_color = get_button_color(a_img)
     b_color = get_button_color(b_img)
     c_color = get_button_color(c_img)
@@ -116,10 +117,33 @@ def auto_process():
         raw_text['c'] = get_text(c_img)
         raw_text['d'] = get_text(d_img)
 
-        data = query(raw_text['q'])
-        print('data: ', data)
+        find_flag = False
+        datas = query(raw_text['q'])
+        if datas is not None:
+            for data in datas:
+                print('find data: ', data)
+                if data[2] == raw_text['a']:
+                    print('查询到正确答案A')
+                    pyautogui.press('A')
+                    find_flag = True
+                    break
+                elif data[2] == raw_text['b']:
+                    print('查询到正确答案B')
+                    pyautogui.press('B')
+                    find_flag = True
+                    break
+                elif data[2] == raw_text['c']:
+                    print('查询到正确答案C')
+                    pyautogui.press('C')
+                    find_flag = True
+                    break
+                elif data[2] == raw_text['d']:
+                    print('查询到正确答案D')
+                    pyautogui.press('D')
+                    find_flag = True
+                    break
 
-        if data is None or data[2] == '' or raw_text['q'] == '':
+        if not find_flag or raw_text['q'] == '':
             print('！未查询到该题目')
             if learn_mode:
                 # 进行盲选
@@ -137,18 +161,6 @@ def auto_process():
                 elif select == 4:
                     pyautogui.press('D')
                     print('盲选答案为D')
-        elif data[2] == raw_text['a']:
-            print('查询到正确答案A')
-            pyautogui.press('A')
-        elif data[2] == raw_text['b']:
-            print('查询到正确答案B')
-            pyautogui.press('B')
-        elif data[2] == raw_text['c']:
-            print('查询到正确答案C')
-            pyautogui.press('C')
-        elif data[2] == raw_text['d']:
-            print('查询到正确答案D')
-            pyautogui.press('D')
 
     if raw_text.get('q') is not None:
         if a_color == '绿色' and raw_text['a'] is not None:
