@@ -16,7 +16,7 @@ screen_x2 = 1121
 screen_y2 = 1020
 
 # 学习模式开启随机选择功能
-learn_mode = False
+learn_mode = True
 
 screen_width = screen_x2 - screen_x1
 screen_height = screen_y2 - screen_y1
