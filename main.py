@@ -106,7 +106,7 @@ def auto_process():
     c_color = get_button_color(c_img)
     d_color = get_button_color(d_img)
 
-    if get_text(continue_img) == '继续挑战':
+    if get_text(continue_img).find('继续挑战') > 0:
         pyautogui.press('D')
         return
 
