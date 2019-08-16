@@ -1,4 +1,5 @@
 import cnocr
+import difflib
 import numpy
 import PIL.Image as Image
 import PIL.ImageGrab as ImageGrab
@@ -118,6 +119,7 @@ def auto_process():
         raw_text['d'] = get_text(d_img)
 
         find_flag = False
+        similar_rate = {'A': 0, 'B': 0, 'C': 0, 'D': 0}
         datas = query(raw_text['q'])
         if datas is not None:
             for data in datas:
@@ -142,6 +144,16 @@ def auto_process():
                     pyautogui.press('D')
                     find_flag = True
                     break
+                similar_rate['A'] = difflib.SequenceMatcher(None, raw_text['a'], data[2]).quick_ratio()
+                similar_rate['B'] = difflib.SequenceMatcher(None, raw_text['b'], data[2]).quick_ratio()
+                similar_rate['C'] = difflib.SequenceMatcher(None, raw_text['c'], data[2]).quick_ratio()
+                similar_rate['D'] = difflib.SequenceMatcher(None, raw_text['d'], data[2]).quick_ratio()
+            if not find_flag:
+                print('开始按相似度匹配')
+                similar_rate = sorted(similar_rate.items(), key=lambda x: x[1], reverse=True)
+                if similar_rate[0][1] > 0.7:
+                    choice = similar_rate[0][0]
+                    pyautogui.press(choice)
 
         if not find_flag or raw_text['q'] == '':
             print('！未查询到该题目')
